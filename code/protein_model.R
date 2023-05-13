@@ -21,7 +21,7 @@ library(lhs)
 
 # Model parameters
 params <- c(
-  k_folding_unmutated = 0.9,        # Folding rate constant for proteins from unmutated RNA
+  k_folding_unmutated = 0.9,       # Folding rate constant for proteins from unmutated RNA
   k_folding_mutated = 0.9,         # Folding rate constant for proteins from mutated RNA
   k_misfolding_unmutated = 0.1,    # Misfolding rate constant for proteins from unmutated RNA
   k_misfolding_mutated = 0.3,      # Misfolding rate constant for proteins from mutated RNA
@@ -37,22 +37,23 @@ params <- c(
   k_misfolding_unmutated = 0.4,      # Misfolding rate constant for proteins from unmutated RNA
   k_misfolding_mutated = 0.9,        # Misfolding rate constant for proteins from mutated RNA
   k_chaperone_folding = 0.02,        # Chaperone-assisted folding rate constant
-  k_degradation = 0.01,              # Protein degradation rate constant
+  k_degradation = 0.02,              # Protein degradation rate constant
   feedback_strength = 0.0001         # Feedback strength for negative feedback
 )
 
 # Initial state of the system
 init <- c(
   RNA_unmutated = 1000,            # Number of unmutated RNA molecules present
-  RNA_mutated = 1000,               # Number of mutated RNA molecules present
+  RNA_mutated = 1000,              # Number of mutated RNA molecules present
   Protein_success = 0,             # Number of successfully folded proteins
   Protein_misfolded = 0,           # Number of misfolded proteins
-  Chaperone = 1,                 # Number of chaperones available
-  Degradation_signal = 1          # Initial level of the degradation signal
+  Chaperone = 50,                  # Number of chaperones available
+  Degradation_signal = 150         # Initial level of the degradation signal
 )
 
 
-# Propensity function
+# Calculate the rate at which each reaction in the system can occur dependent on parameters and initial state
+# This function will allow for calculations of rates and probabilities to change over time as we move through time steps
 propensity_function <- function(state, params, t) {
   return(c(
     # Folding reaction for proteins translated from unmutated RNA
@@ -91,7 +92,7 @@ transitions <- list(
   c(Degradation_signal = +1)
 )
 
-t_final <- 5   # Final time for the simulation
+t_final <- 10   # Final time for the simulation
 n_steps <- 50  # Number of time steps for storing the output
 
 result <- ssa.adaptivetau(init.values = init, 
@@ -102,6 +103,16 @@ result <- ssa.adaptivetau(init.values = init,
 result
 
 result <- as.data.frame(result)
+
+result_long <- result %>% 
+  pivot_longer(cols = -time, names_to = "variable", values_to = "value")
+
+ggplot(result_long, aes(x = time, y = value, color = variable)) +
+  geom_line() +
+  labs(x = "Time", y = "Value", color = "Variable", 
+       title = "Protein Misfolding Model") +
+  theme_minimal()
+
 
 
 # Plot the time-course data for protein_success and protein_misfolded

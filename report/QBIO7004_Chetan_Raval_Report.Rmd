@@ -14,12 +14,12 @@ output:
       code_folding: show
       fig_caption: TRUE
       always_allow_html: TRUE
-      bibliography: ../references/packages.bib # this contains the references used in this document (exported from Zotero in bibtex format)
+      bibliography: ../references/references.bib # this contains the references used in this document (exported from Zotero in bibtex format)
 link-citations: TRUE 
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 
 packages_required <- c("bookdown", "tidyverse", "adaptivetau", "lhs")
 not_installed <- packages_required[!(packages_required %in% installed.packages()[ , "Package"])]
@@ -42,9 +42,43 @@ In these scenarios, computational models serve as indispensable tools to investi
 The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases.
 
 ## 2.0 Methods
+Preliminary background research was conducted on the mechanisms of protein folding in order to create a biologically representative model. Lehninger Principles of Biochemistry (Nelson et al., 2021) was utilised to create a framework of the most prominent mechanisms before proceeding. Due to the extremely complex nature of the protein folding and degradation pathways, numerous simplifications, which are discussed in 2.1, were made. Seven parameters and their effect on protein folding would be investigated in this model as follows:
+```{r}
+# Model parameters
+params <- c(
+  k_folding_unmutated = 0.9,       # Folding rate constant for proteins from unmutated RNA
+  k_folding_mutated = 0.9,         # Folding rate constant for proteins from mutated RNA
+  k_misfolding_unmutated = 0.1,    # Misfolding rate constant for proteins from unmutated RNA
+  k_misfolding_mutated = 0.3,      # Misfolding rate constant for proteins from mutated RNA
+  k_chaperone_folding = 0.01,      # Chaperone-assisted folding rate constant
+  k_degradation = 0.01,            # Protein degradation rate constant
+  feedback_strength = 0.0001       # Feedback strength for negative feedback
+)
+```
+Protein folding rates are determined by their 3-dimensional, or tertiary, structure complexity (Wang & Panagiotou, 2022) along with a plethora of other factors. The rates chosen here demonstrate the protein folding model and its dynamics as generally as possible for a cell in a steady-state. Real values of these parameters would need to be derived from experimental data depending on the type of cell being studied. 
 
+The initial state of the system was similarly chosen to be simplistic, but biologically representative. Each of the variables in the `init` object represents the quantity or concentration of a component of the system at time zero.
+```{r}
+# Initial state of the system
+init <- c(
+  RNA_unmutated = 1000,            # Number of unmutated RNA molecules present
+  RNA_mutated = 1000,              # Number of mutated RNA molecules present
+  Protein_success = 0,             # Number of successfully folded proteins
+  Protein_misfolded = 0,           # Number of misfolded proteins
+  Chaperone = 50,                  # Number of chaperones available
+  Degradation_signal = 150         # Initial level of the degradation signal
+)
+```
+In this context, the propensity function calculates the rate at which each reaction in the system can occur given the current state of the system at that point in time in relation to the parameters. This function calculates the rates of all possible events in the model such as protein folding, misfolding, degradation, and negative feedback.
 
-### 2.1 Simplifications
+### 2.1 Assumptions and Simplifications
+
+- environmental conditions (pH and temperature)
+- protein stability (delta G)
+- chaperone type and function
+- other degradation pathways - Ubiquitin-Proteasome Pathway and Lysosomal Proteolysis
+- post-translational modifications
+- protein folding/misfolding mechanisms outside of my knowledge
 
 ## 3.0 Results
 
