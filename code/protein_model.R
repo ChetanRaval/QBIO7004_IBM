@@ -8,7 +8,6 @@
 # Presentation
 
 # output summary statistics from the LHS - such as what combination of parameters is causing the highest fraction of misfolding
-# how to find this?? output summary statistics
 
 # show the full dynamics at the start
 # then narrow down to a specific question that you are summarising the model for
@@ -23,7 +22,7 @@ library(lhs)
 
 # Model parameters
 params <- c(
-  k_folding_unmutated = 1,         # Folding rate constant for proteins from unmutated RNA
+  k_folding_unmutated = 0.9,        # Folding rate constant for proteins from unmutated RNA
   k_folding_mutated = 0.9,         # Folding rate constant for proteins from mutated RNA
   k_misfolding_unmutated = 0.1,    # Misfolding rate constant for proteins from unmutated RNA
   k_misfolding_mutated = 0.3,      # Misfolding rate constant for proteins from mutated RNA
@@ -35,14 +34,13 @@ params <- c(
 # more interesting base parameter values
 params <- c(
   k_folding_unmutated = 0.3,         # Folding rate constant for proteins from unmutated RNA
-  k_folding_mutated = 0.9,           # Folding rate constant for proteins from mutated RNA
+  k_folding_mutated = 0.5,           # Folding rate constant for proteins from mutated RNA
   k_misfolding_unmutated = 0.4,      # Misfolding rate constant for proteins from unmutated RNA
   k_misfolding_mutated = 0.9,        # Misfolding rate constant for proteins from mutated RNA
   k_chaperone_folding = 0.02,        # Chaperone-assisted folding rate constant
-  k_degradation = 0,              # Protein degradation rate constant
+  k_degradation = 0.01,              # Protein degradation rate constant
   feedback_strength = 0.0001         # Feedback strength for negative feedback
 )
-
 
 # Initial state of the system
 init <- c(
@@ -50,8 +48,8 @@ init <- c(
   RNA_mutated = 1000,               # Number of mutated RNA molecules present
   Protein_success = 0,             # Number of successfully folded proteins
   Protein_misfolded = 0,           # Number of misfolded proteins
-  Chaperone = 2,                 # Number of chaperones available
-  Degradation_signal = 2          # Initial level of the degradation signal
+  Chaperone = 1,                 # Number of chaperones available
+  Degradation_signal = 1          # Initial level of the degradation signal
 )
 
 
@@ -80,7 +78,7 @@ transitions <- list(
   # Folding reaction for proteins translated from unmutated RNA
   c(RNA_unmutated = -1, Protein_success = +1),
   # Folding reaction for proteins translated from mutated RNA
-  c(RNA_mutated = -1, Protein_success = +1),
+  c(RNA_mutated = -1, Protein_misfolded = +1),
   # Misfolding reaction for proteins translated from unmutated RNA
   c(RNA_unmutated = -1, Protein_misfolded = +1),
   # Misfolding reaction for proteins translated from mutated RNA
@@ -120,19 +118,6 @@ ggplot(result, aes(x = time)) +
   theme_minimal()
 
 
-
-# more interesting base parameter values
-params <- c(
-  k_folding_unmutated = 0.3,         # Folding rate constant for proteins from unmutated RNA
-  k_folding_mutated = 0.9,           # Folding rate constant for proteins from mutated RNA
-  k_misfolding_unmutated = 0.4,      # Misfolding rate constant for proteins from unmutated RNA
-  k_misfolding_mutated = 0.9,        # Misfolding rate constant for proteins from mutated RNA
-  k_chaperone_folding = 0.02,        # Chaperone-assisted folding rate constant
-  k_degradation = 0,              # Protein degradation rate constant
-  feedback_strength = 0.0001         # Feedback strength for negative feedback
-)
-
-
 # test LHS code - unsure if correct approach
 
 param_ranges <- list(
@@ -147,7 +132,7 @@ param_ranges <- list(
 
 
 
-n_samples <- 1000  # Number of samples (adjust as needed)
+n_samples <- 10000  # Number of samples (adjust as needed)
 
 # Generate normalized LHS samples
 lhs_samples <- randomLHS(n_samples, length(param_ranges))
@@ -165,10 +150,14 @@ for (i in seq_along(param_ranges)) {
 t_max <- 10
 
 results <- vector("list", length = n_samples)
+start <- Sys.time()
 for (i in 1:n_samples) {
   params_i <- as.list(param_samples[i, ])
   results[[i]] <- ssa.adaptivetau(init, transitions, propensity_function, params_i, t_max)
 }
+end <- Sys.time()
+
+end-start
 
 
 fractions_misfolded <- numeric(length(results))
@@ -196,13 +185,6 @@ input_parameters$fraction_misfolded <- fractions_misfolded
 
 # Create a scatter plot matrix
 pairs(input_parameters)
-
-
-
-
-
-
-
 
 
 
@@ -249,5 +231,6 @@ plots <- lapply(simulation_ids, function(simulation_id) {
 
 # Display the plots
 gridExtra::grid.arrange(grobs = plots, ncol = 1)
+
 
 

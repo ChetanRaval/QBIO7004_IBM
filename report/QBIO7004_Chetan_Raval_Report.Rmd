@@ -1,0 +1,50 @@
+---
+title: "QBIO7004 - Computational Methods in Biology"
+author: "Chetan Raval"
+date: "`r Sys.Date()`"
+output: 
+    bookdown::html_document2:
+      df_print: paged
+      theme: flatly
+      highlight: tango
+      toc: TRUE
+      toc_float: TRUE
+      toc_depth: 3
+      number_sections: FALSE
+      code_folding: show
+      fig_caption: TRUE
+      always_allow_html: TRUE
+      bibliography: ../references/packages.bib # this contains the references used in this document (exported from Zotero in bibtex format)
+link-citations: TRUE 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+packages_required <- c("bookdown", "tidyverse", "adaptivetau", "lhs")
+not_installed <- packages_required[!(packages_required %in% installed.packages()[ , "Package"])]
+if(length(not_installed)) install.packages(not_installed)   
+
+library(bookdown)
+library(tidyverse)
+library(adaptivetau)
+library(lhs)
+```
+
+
+
+
+
+
+
+
+
+
+
+## 6.0 Bibliography
+```{r, echo = FALSE}
+knitr::write_bib(c(.packages(), "bookdown"), "../references/packages.bib")
+```
+
+## 7.0 General information
+This document was last updated at `r Sys.time()` using R Markdown (built with `r R.version.string`).
