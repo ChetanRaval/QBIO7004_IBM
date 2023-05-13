@@ -1,5 +1,5 @@
 ---
-title: "QBIO7004 - Computational Methods in Biology"
+title: "Computational Modeling of Protein Misfolding and its Implications in Neurodegenerative Diseases"
 author: "Chetan Raval"
 date: "`r Sys.Date()`"
 output: 
@@ -31,6 +31,26 @@ library(adaptivetau)
 library(lhs)
 ```
 
+## 1.0 Introduction
+Introduction
+Protein misfolding, an integral molecular event where proteins fail to fold into their functional, tertiary structure, is involved in the pathogenesis of numerous neurodegenerative diseases, including Alzheimer’s, Parkinson’s, and Huntington’s disease (Chung et al., 2018). Aggregation and accumulation of these misfolded proteins along with degradation dysfunction (Koh et al., 2019) in neurons cause cellular toxicity and ultimately lead to neuronal death, contributing directly to the presentation of these diseases. Substantial research efforts have been made in an attempt to design therapeutics to treat neurodegenerative diseases, but the complex nature of protein misfolding, aggregation, and the resulting cellular response remain incompletely understood. 
+
+Therapeutic efforts have focused on varying stages of the protein lifecycle including targeting misfolding and aggregation, chaperone expression, and degradation pathways. However, ambiguity surrounding which form(s) of protein are responsible for a given disease, diversity of chaperone mechanisms, and the sheer number of proteins involved in degradation pathways pose a formidable challenge in the pursuit of disease treatment development (Sweeney et al., 2017).
+
+In these scenarios, computational models serve as indispensable tools to investigate the intricacies of biological reactions involved in protein folding and misfolding. Stochastic models in particular facilitate quantifiable predictions about a system’s behaviour under various conditions which can support our understanding of how changes in particular parameters and conditions can catalyse a shift from normal protein folding to severely harmful misfolding that contributes to disease onset and progression.
+
+The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases.
+
+## 2.0 Methods
+
+
+### 2.1 Simplifications
+
+## 3.0 Results
+
+### 3.1 Parameter Screening
+
+## 4.0 Conclusion
 
 
 
@@ -41,10 +61,10 @@ library(lhs)
 
 
 
-## 6.0 Bibliography
+## 5.0 Bibliography
 ```{r, echo = FALSE}
 knitr::write_bib(c(.packages(), "bookdown"), "../references/packages.bib")
 ```
 
-## 7.0 General information
+## 6.0 General information
 This document was last updated at `r Sys.time()` using R Markdown (built with `r R.version.string`).

@@ -17,7 +17,6 @@
 
 library(adaptivetau)
 library(tidyverse)
-library(gganimate)
 library(lhs)
 
 # Model parameters
