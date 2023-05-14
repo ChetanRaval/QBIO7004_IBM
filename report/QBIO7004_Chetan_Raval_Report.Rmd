@@ -19,7 +19,7 @@ link-citations: TRUE
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 
 packages_required <- c("bookdown", "tidyverse", "adaptivetau", "lhs")
 not_installed <- packages_required[!(packages_required %in% installed.packages()[ , "Package"])]
@@ -32,14 +32,11 @@ library(lhs)
 ```
 
 ## 1.0 Introduction
-Introduction
-Protein misfolding, an integral molecular event where proteins fail to fold into their functional, tertiary structure, is involved in the pathogenesis of numerous neurodegenerative diseases, including Alzheimer’s, Parkinson’s, and Huntington’s disease (Chung et al., 2018). Aggregation and accumulation of these misfolded proteins along with degradation dysfunction (Koh et al., 2019) in neurons cause cellular toxicity and ultimately lead to neuronal death, contributing directly to the presentation of these diseases. Substantial research efforts have been made in an attempt to design therapeutics to treat neurodegenerative diseases, but the complex nature of protein misfolding, aggregation, and the resulting cellular response remain incompletely understood. 
+Protein misfolding, an integral molecular event where proteins fail to fold into their functional, tertiary structure, is involved in the pathogenesis of numerous neurodegenerative diseases, including Alzheimer’s, Parkinson’s, and Huntington’s disease (Chung et al., 2018). Aggregation and accumulation of these misfolded proteins along with degradation dysfunction (Koh et al., 2019) in neurons cause cellular toxicity and ultimately lead to neuronal death, contributing directly to the presentation of these diseases. Substantial research efforts have been made in an attempt to design therapeutics to treat neurodegenerative diseases, but the complex nature of protein misfolding, aggregation, and the resulting cellular response remain incompletely understood.
 
 Therapeutic efforts have focused on varying stages of the protein lifecycle including targeting misfolding and aggregation, chaperone expression, and degradation pathways. However, ambiguity surrounding which form(s) of protein are responsible for a given disease, diversity of chaperone mechanisms, and the sheer number of proteins involved in degradation pathways pose a formidable challenge in the pursuit of disease treatment development (Sweeney et al., 2017).
 
-In these scenarios, computational models serve as indispensable tools to investigate the intricacies of biological reactions involved in protein folding and misfolding. Stochastic models in particular facilitate quantifiable predictions about a system’s behaviour under various conditions which can support our understanding of how changes in particular parameters and conditions can catalyse a shift from normal protein folding to severely harmful misfolding that contributes to disease onset and progression.
-
-The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases.
+The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases. This model will be utilised to screen parameter space using Latin Hypercube Sampling and investigate what combination of parameters in the modelled system leads to the highest fraction of misfolding. 
 
 ## 2.0 Methods
 Preliminary background research was conducted on the mechanisms of protein folding in order to create a biologically representative model. Lehninger Principles of Biochemistry (Nelson et al., 2021) was utilised to create a framework of the most prominent mechanisms before proceeding. Due to the extremely complex nature of the protein folding and degradation pathways, numerous simplifications, which are discussed in 2.1, were made. Seven parameters and their effect on protein folding would be investigated in this model as follows:
@@ -69,9 +66,156 @@ init <- c(
   Degradation_signal = 150         # Initial level of the degradation signal
 )
 ```
-In this context, the propensity function calculates the rate at which each reaction in the system can occur given the current state of the system at that point in time in relation to the parameters. This function calculates the rates of all possible events in the model such as protein folding, misfolding, degradation, and negative feedback.
+The propensity function calculates the rate at which each reaction can occur given the current state of the system at that point in time in relation to the parameters. This function calculates the rates of all possible events in the model such as protein folding, misfolding, degradation, and negative feedback.
+```{r}
+# Propensity function
+propensity_function <- function(state, params, t) {
+  return(c(
+    # Folding reaction for proteins translated from unmutated RNA
+    params[["k_folding_unmutated"]] * state[["RNA_unmutated"]],
+    # Folding reaction for proteins translated from mutated RNA
+    params[["k_folding_mutated"]] * state[["RNA_mutated"]],
+    # Misfolding reaction for proteins translated from unmutated RNA
+    params[["k_misfolding_unmutated"]] * state[["RNA_unmutated"]],
+    # Misfolding reaction for proteins translated from mutated RNA
+    params[["k_misfolding_mutated"]] * state[["RNA_mutated"]],
+    # Chaperone-assisted folding reaction for misfolded proteins
+    params[["k_chaperone_folding"]] * state[["Protein_misfolded"]] * state[["Chaperone"]],
+    # Protein degradation reaction for misfolded proteins through lysosome-like process
+    params[["k_degradation"]] * state[["Protein_misfolded"]] * state[["Degradation_signal"]],
+    # Negative feedback reaction that increases the degradation signal when
+    # there is a high concentration of successfully folded proteins
+    params[["feedback_strength"]] * state[["Protein_success"]]^2
+  ))
+}
+```
 
-### 2.1 Assumptions and Simplifications
+The following list simply updates values in the `init` object depending on the above propensity function reactions as the simulation steps through time.
+```{r}
+transitions <- list(
+  # Folding reaction for proteins translated from unmutated RNA
+  c(RNA_unmutated = -1, Protein_success = +1),
+  # Folding reaction for proteins translated from mutated RNA
+  c(RNA_mutated = -1, Protein_misfolded = +1),
+  # Misfolding reaction for proteins translated from unmutated RNA
+  c(RNA_unmutated = -1, Protein_misfolded = +1),
+  # Misfolding reaction for proteins translated from mutated RNA
+  c(RNA_mutated = -1, Protein_misfolded = +1),
+  # Chaperone-assisted folding reaction for misfolded proteins
+  c(Protein_misfolded = -1, Protein_success = +1),
+  # Protein degradation reaction for misfolded proteins through lysosome-like process
+  c(Protein_misfolded = -1),
+  # Negative feedback reaction that increases the degradation signal when
+  # there is a high concentration of successfully folded proteins
+  c(Degradation_signal = +1)
+)
+```
+
+Finally, the initialised parameters, initial conditions, and rates can be plugged into the `ssa.adaptivetau` function to perform the stochastic simulation over the specified number of time steps.
+```{r}
+t_final <- 1000   # Final time for the simulation
+
+# run simulation using the adaptive tau-leaping method 
+result <- ssa.adaptivetau(init.values = init, 
+                          transitions = transitions, 
+                          rateFunc = propensity_function, 
+                          params = params, 
+                          tf = t_final)
+```
+
+The resulting output shows `t_final` time steps and corresponding values of the state of the system. The head of the dataframe, for reference:
+```{r, echo = FALSE}
+result <- as.data.frame(result)
+knitr::kable(head(result))
+```
+
+### 2.1 Parameter Space Screening
+After completing a single simulation of the system and verifying the outputs behave in the intended way, the parameter space needs to be screened in order to answer the question at hand. The combination of parameters that causes the highest fraction of misfolding will be investigated by Latin Hypercube Sampling (LHS). The implementation of this is as follows.
+
+First a range of parameters to be sampled is defined. The values presented here are extreme simplifications that do not account for protein size, complexity, and a variety of other factors, but nevertheless can provide a good approximation of a biological system (Wang & Panagiotou, 2022). Of course, to create an accurate model, these values would need to experimentally derived.
+```{r}
+# create parameter ranges to sample
+param_ranges <- list(
+  k_folding_unmutated = c(0.3, 20),
+  k_folding_mutated = c(0.9, 30),
+  k_misfolding_unmutated = c(0.4, 7),
+  k_misfolding_mutated = c(1, 10),
+  k_chaperone_folding = c(0.001, 0.05),
+  k_degradation = c(0.0001, 0.1),
+  feedback_strength = c(0.000001, 0.01)
+)
+```
+
+Then `n_samples` samples are created for each parameter in `param_ranges` which will then be used in parameter space screening to investigate the combination of parameters that causes the highest fraction of protein misfolding.
+```{r}
+# Number of samples
+n_samples <- 10000  
+
+# Generate normalized LHS samples
+lhs_samples <- randomLHS(n_samples, length(param_ranges))
+
+# Scale the samples to the defined parameter ranges
+# these param samples are n_samples * the parameter ranges
+param_samples <- matrix(NA, nrow = n_samples, ncol = length(param_ranges),
+                        dimnames = list(NULL, names(param_ranges)))
+
+
+# Loop through the indices of the list of parameter ranges
+for (i in seq_along(param_ranges)) {
+  # Get the range (min and max) for each parameter
+  range_i <- param_ranges[[i]]
+  # Generate a random sample of size n_samples from a uniform distribution 
+  # with the minimum and maximum values specified by range_i.
+  # These random numbers represent sampled values of each parameter, 
+  # which are stored in the i-th column of the param_samples matrix.
+  param_samples[, i] <- runif(n_samples, min = range_i[1], max = range_i[2])
+}
+```
+
+```{r, echo = FALSE}
+knitr::kable(head(param_samples))
+```
+
+Each row of the resulting `param_samples` dataframe was then simulated using `ssa.adaptivetau` and stored in the `results` vector.
+```{r, eval = FALSE}
+t_max <- 25
+
+# Initialize a list of length n_samples to store the results of each simulation
+results <- vector("list", length = n_samples)
+# Loop over the number of samples
+for (i in 1:n_samples) {
+  # For each sample, extract the i-th row from the param_samples matrix,
+  # which corresponds to the parameter values for the i-th simulation.
+  # Convert this row to a list, because the ssa.adaptivetau function expects its parameters in this format.
+  params_i <- as.list(param_samples[i, ])
+  # Run the stochastic simulation algorithm with the Adaptive Tau method for the current set of parameters.
+  # The initial state of the system is given by "init", the set of reactions by "transitions",
+  # the propensity function by "propensity_function", the parameters by "params_i", 
+  # and the simulation runs until time "t_max".
+  # Store the result of the simulation in the i-th element of the results list.
+  results[[i]] <- ssa.adaptivetau(init, transitions, propensity_function, params_i, t_max)
+}
+```
+
+To determine the system parameters that cause the highest fraction of protein misfolding, the results vector was inspected and a new vector was created with fractions of misfolding rates for each simulation. The maximum value from this list was then extracted along with the parameters utilised in that particular simulation.
+```{r}
+fractions_misfolded <- numeric(length(results))
+
+for (i in seq_along(results)) {
+  result <- results[[i]]
+  final_state <- result[nrow(result), 4:5] # Get the final state of Protein_success (4th column) and Protein_misfolded (5th column)
+  # print(final_state)
+  fraction_misfolded <- final_state[2] / sum(final_state) # Calculate the fraction of misfolded proteins
+  fractions_misfolded[i] <- fraction_misfolded
+}
+
+max_index <- which.max(fractions_misfolded)
+max_misfold <- fractions_misfolded[max_index]
+optimal_params <- param_samples[max_index, ]
+```
+
+
+### 2.2 Assumptions and Simplifications
 
 - environmental conditions (pH and temperature)
 - protein stability (delta G)

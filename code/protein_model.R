@@ -47,8 +47,8 @@ init <- c(
   RNA_mutated = 1000,              # Number of mutated RNA molecules present
   Protein_success = 0,             # Number of successfully folded proteins
   Protein_misfolded = 0,           # Number of misfolded proteins
-  Chaperone = 50,                  # Number of chaperones available
-  Degradation_signal = 150         # Initial level of the degradation signal
+  Chaperone = 15,                  # Number of chaperones available
+  Degradation_signal = 25         # Initial level of the degradation signal
 )
 
 
@@ -93,16 +93,16 @@ transitions <- list(
 )
 
 t_final <- 10   # Final time for the simulation
-n_steps <- 50  # Number of time steps for storing the output
 
 result <- ssa.adaptivetau(init.values = init, 
                           transitions = transitions, 
                           rateFunc = propensity_function, 
                           params = params, 
                           tf = t_final)
-result
+
 
 result <- as.data.frame(result)
+head(result)
 
 result_long <- result %>% 
   pivot_longer(cols = -time, names_to = "variable", values_to = "value")
@@ -128,8 +128,9 @@ ggplot(result, aes(x = time)) +
   theme_minimal()
 
 
-# test LHS code - unsure if correct approach
+# Latin Hypercube Sampling
 
+# create parameter ranges to sample
 param_ranges <- list(
   k_folding_unmutated = c(0.3, 20),
   k_folding_mutated = c(0.9, 30),
@@ -140,9 +141,8 @@ param_ranges <- list(
   feedback_strength = c(0.000001, 0.01)
 )
 
-
-
-n_samples <- 10000  # Number of samples (adjust as needed)
+# Number of samples
+n_samples <- 50000  
 
 # Generate normalized LHS samples
 lhs_samples <- randomLHS(n_samples, length(param_ranges))
@@ -152,23 +152,35 @@ lhs_samples <- randomLHS(n_samples, length(param_ranges))
 param_samples <- matrix(NA, nrow = n_samples, ncol = length(param_ranges),
                         dimnames = list(NULL, names(param_ranges)))
 
+
+# Loop through the indices of the list of parameter ranges
 for (i in seq_along(param_ranges)) {
+  # Get the range (min and max) for each parameter
   range_i <- param_ranges[[i]]
+  # Generate a random sample of size n_samples from a uniform distribution 
+  # with the minimum and maximum values specified by range_i.
+  # These random numbers represent sampled values of each parameter, 
+  # which are stored in the i-th column of the param_samples matrix.
   param_samples[, i] <- runif(n_samples, min = range_i[1], max = range_i[2])
-  }
+}
 
-t_max <- 10
+t_max <- 25
 
+# Initialize a list of length n_samples to store the results of each simulation
 results <- vector("list", length = n_samples)
-start <- Sys.time()
+# Loop over the number of samples
 for (i in 1:n_samples) {
+  # For each sample, extract the i-th row from the param_samples matrix,
+  # which corresponds to the parameter values for the i-th simulation.
+  # Convert this row to a list, because the ssa.adaptivetau function expects its parameters in this format.
   params_i <- as.list(param_samples[i, ])
+  # Run the stochastic simulation algorithm with the Adaptive Tau method for the current set of parameters.
+  # The initial state of the system is given by "init", the set of reactions by "transitions",
+  # the propensity function by "propensity_function", the parameters by "params_i", 
+  # and the simulation runs until time "t_max".
+  # Store the result of the simulation in the i-th element of the results list.
   results[[i]] <- ssa.adaptivetau(init, transitions, propensity_function, params_i, t_max)
 }
-end <- Sys.time()
-
-end-start
-
 
 fractions_misfolded <- numeric(length(results))
 
@@ -184,6 +196,8 @@ fractions_misfolded
 
 # Find the index of the simulation with the highest fraction of misfolded proteins
 max_index <- which.max(fractions_misfolded)
+max_misfold <- fractions_misfolded[max_index]
+
 
 # Retrieve the parameter combination that corresponds to the index
 optimal_params <- param_samples[max_index, ]
@@ -192,11 +206,6 @@ optimal_params <- param_samples[max_index, ]
 input_parameters <- data.frame(param_samples)
 colnames(input_parameters) <- names(param_ranges)
 input_parameters$fraction_misfolded <- fractions_misfolded
-
-# Create a scatter plot matrix
-pairs(input_parameters)
-
-
 
 
 

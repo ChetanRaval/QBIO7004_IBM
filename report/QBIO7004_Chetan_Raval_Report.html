@@ -11,7 +11,7 @@
 
 <meta name="author" content="Chetan Raval" />
 
-<meta name="date" content="2023-05-13" />
+<meta name="date" content="2023-05-14" />
 
 <title>Computational Modeling of Protein Misfolding and its Implications in Neurodegenerative Diseases</title>
 
@@ -2931,18 +2931,16 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Computational Modeling of Protein Misfolding and its Implications in Neurodegenerative Diseases</h1>
 <h4 class="author">Chetan Raval</h4>
-<h4 class="date">2023-05-13</h4>
+<h4 class="date">2023-05-14</h4>
 
 </div>
 
 
 <div id="introduction" class="section level2">
 <h2>1.0 Introduction</h2>
-<p>Introduction
-Protein misfolding, an integral molecular event where proteins fail to fold into their functional, tertiary structure, is involved in the pathogenesis of numerous neurodegenerative diseases, including Alzheimer’s, Parkinson’s, and Huntington’s disease (Chung et al., 2018). Aggregation and accumulation of these misfolded proteins along with degradation dysfunction (Koh et al., 2019) in neurons cause cellular toxicity and ultimately lead to neuronal death, contributing directly to the presentation of these diseases. Substantial research efforts have been made in an attempt to design therapeutics to treat neurodegenerative diseases, but the complex nature of protein misfolding, aggregation, and the resulting cellular response remain incompletely understood.</p>
+<p>Protein misfolding, an integral molecular event where proteins fail to fold into their functional, tertiary structure, is involved in the pathogenesis of numerous neurodegenerative diseases, including Alzheimer’s, Parkinson’s, and Huntington’s disease (Chung et al., 2018). Aggregation and accumulation of these misfolded proteins along with degradation dysfunction (Koh et al., 2019) in neurons cause cellular toxicity and ultimately lead to neuronal death, contributing directly to the presentation of these diseases. Substantial research efforts have been made in an attempt to design therapeutics to treat neurodegenerative diseases, but the complex nature of protein misfolding, aggregation, and the resulting cellular response remain incompletely understood.</p>
 <p>Therapeutic efforts have focused on varying stages of the protein lifecycle including targeting misfolding and aggregation, chaperone expression, and degradation pathways. However, ambiguity surrounding which form(s) of protein are responsible for a given disease, diversity of chaperone mechanisms, and the sheer number of proteins involved in degradation pathways pose a formidable challenge in the pursuit of disease treatment development (Sweeney et al., 2017).</p>
-<p>In these scenarios, computational models serve as indispensable tools to investigate the intricacies of biological reactions involved in protein folding and misfolding. Stochastic models in particular facilitate quantifiable predictions about a system’s behaviour under various conditions which can support our understanding of how changes in particular parameters and conditions can catalyse a shift from normal protein folding to severely harmful misfolding that contributes to disease onset and progression.</p>
-<p>The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases.</p>
+<p>The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases. This model will be utilised to screen parameter space using Latin Hypercube Sampling and investigate what combination of parameters in the modelled system leads to the highest fraction of misfolding.</p>
 </div>
 <div id="methods" class="section level2">
 <h2>2.0 Methods</h2>
@@ -2968,8 +2966,173 @@ Protein misfolding, an integral molecular event where proteins fail to fold into
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">Chaperone =</span> <span class="dv">50</span>,                  <span class="co"># Number of chaperones available</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Degradation_signal =</span> <span class="dv">150</span>         <span class="co"># Initial level of the degradation signal</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>The propensity function calculates the rate at which each reaction can occur given the current state of the system at that point in time in relation to the parameters. This function calculates the rates of all possible events in the model such as protein folding, misfolding, degradation, and negative feedback.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Propensity function</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>propensity_function <span class="ot">&lt;-</span> <span class="cf">function</span>(state, params, t) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">c</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Folding reaction for proteins translated from unmutated RNA</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;k_folding_unmutated&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;RNA_unmutated&quot;</span>]],</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Folding reaction for proteins translated from mutated RNA</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;k_folding_mutated&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;RNA_mutated&quot;</span>]],</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Misfolding reaction for proteins translated from unmutated RNA</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;k_misfolding_unmutated&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;RNA_unmutated&quot;</span>]],</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Misfolding reaction for proteins translated from mutated RNA</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;k_misfolding_mutated&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;RNA_mutated&quot;</span>]],</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Chaperone-assisted folding reaction for misfolded proteins</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;k_chaperone_folding&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;Protein_misfolded&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;Chaperone&quot;</span>]],</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Protein degradation reaction for misfolded proteins through lysosome-like process</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;k_degradation&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;Protein_misfolded&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;Degradation_signal&quot;</span>]],</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Negative feedback reaction that increases the degradation signal when</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># there is a high concentration of successfully folded proteins</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    params[[<span class="st">&quot;feedback_strength&quot;</span>]] <span class="sc">*</span> state[[<span class="st">&quot;Protein_success&quot;</span>]]<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The following list simply updates values in the <code>init</code> object depending on the above propensity function reactions as the simulation steps through time.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>transitions <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Folding reaction for proteins translated from unmutated RNA</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">RNA_unmutated =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">Protein_success =</span> <span class="sc">+</span><span class="dv">1</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Folding reaction for proteins translated from mutated RNA</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">RNA_mutated =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">Protein_misfolded =</span> <span class="sc">+</span><span class="dv">1</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Misfolding reaction for proteins translated from unmutated RNA</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">RNA_unmutated =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">Protein_misfolded =</span> <span class="sc">+</span><span class="dv">1</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Misfolding reaction for proteins translated from mutated RNA</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">RNA_mutated =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">Protein_misfolded =</span> <span class="sc">+</span><span class="dv">1</span>),</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Chaperone-assisted folding reaction for misfolded proteins</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">Protein_misfolded =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">Protein_success =</span> <span class="sc">+</span><span class="dv">1</span>),</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Protein degradation reaction for misfolded proteins through lysosome-like process</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">Protein_misfolded =</span> <span class="sc">-</span><span class="dv">1</span>),</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Negative feedback reaction that increases the degradation signal when</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># there is a high concentration of successfully folded proteins</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">Degradation_signal =</span> <span class="sc">+</span><span class="dv">1</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>Finally, the initialised parameters, initial conditions, and rates can be plugged into the <code>ssa.adaptivetau</code> function to perform the stochastic simulation over the specified number of time steps.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>t_final <span class="ot">&lt;-</span> <span class="dv">1000</span>   <span class="co"># Final time for the simulation</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># run simulation using the adaptive tau-leaping method </span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">ssa.adaptivetau</span>(<span class="at">init.values =</span> init, </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">transitions =</span> transitions, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">rateFunc =</span> propensity_function, </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                          <span class="at">params =</span> params, </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                          <span class="at">tf =</span> t_final)</span></code></pre></div>
+<p>The resulting output shows <code>t_final</code> time steps and corresponding values of the state of the system. The head of the dataframe, for reference:</p>
+<table>
+<colgroup>
+<col width="10%" />
+<col width="14%" />
+<col width="12%" />
+<col width="16%" />
+<col width="18%" />
+<col width="10%" />
+<col width="19%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">time</th>
+<th align="right">RNA_unmutated</th>
+<th align="right">RNA_mutated</th>
+<th align="right">Protein_success</th>
+<th align="right">Protein_misfolded</th>
+<th align="right">Chaperone</th>
+<th align="right">Degradation_signal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0.0000000</td>
+<td align="right">1000</td>
+<td align="right">1000</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">50</td>
+<td align="right">150</td>
+</tr>
+<tr class="even">
+<td align="right">0.0013562</td>
+<td align="right">999</td>
+<td align="right">1000</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">50</td>
+<td align="right">150</td>
+</tr>
+<tr class="odd">
+<td align="right">0.0015803</td>
+<td align="right">999</td>
+<td align="right">999</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">150</td>
+</tr>
+<tr class="even">
+<td align="right">0.0017486</td>
+<td align="right">998</td>
+<td align="right">999</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">150</td>
+</tr>
+<tr class="odd">
+<td align="right">0.0024464</td>
+<td align="right">998</td>
+<td align="right">998</td>
+<td align="right">2</td>
+<td align="right">2</td>
+<td align="right">50</td>
+<td align="right">150</td>
+</tr>
+<tr class="even">
+<td align="right">0.0028844</td>
+<td align="right">997</td>
+<td align="right">998</td>
+<td align="right">3</td>
+<td align="right">2</td>
+<td align="right">50</td>
+<td align="right">150</td>
+</tr>
+</tbody>
+</table>
+<div id="parameter-space-screening" class="section level3">
+<h3>2.1 Parameter Space Screening</h3>
+<p>After completing a single simulation of the system and verifying the outputs behave in the intended way, the parameter space needs to be screened in order to answer the question at hand. The combination of parameters that causes the highest fraction of misfolding will be investigated by Latin Hypercube Sampling (LHS). The implementation of this is as follows.</p>
+<p>First a range of parameters to be sampled is defined. The values presented here are extreme simplifications that do not account for protein size, complexity, and a variety of other factors, but nevertheless can provide a good approximation of a biological system (Wang &amp; Panagiotou, 2022). Of course, to create an accurate model, these values would need to experimentally derived.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create parameter ranges to sample</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>param_ranges <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_folding_unmutated =</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="dv">20</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_folding_mutated =</span> <span class="fu">c</span>(<span class="fl">0.9</span>, <span class="dv">30</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_misfolding_unmutated =</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="dv">7</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_misfolding_mutated =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">10</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_chaperone_folding =</span> <span class="fu">c</span>(<span class="fl">0.001</span>, <span class="fl">0.05</span>),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_degradation =</span> <span class="fu">c</span>(<span class="fl">0.0001</span>, <span class="fl">0.1</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">feedback_strength =</span> <span class="fu">c</span>(<span class="fl">0.000001</span>, <span class="fl">0.01</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>Then <code>n_samples</code> samples are created for each parameter in <code>param_ranges</code> which will then be used in the Latin Hypercube Sample</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of samples</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>n_samples <span class="ot">&lt;-</span> <span class="dv">10000</span>  </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate normalized LHS samples</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>lhs_samples <span class="ot">&lt;-</span> <span class="fu">randomLHS</span>(n_samples, <span class="fu">length</span>(param_ranges))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Scale the samples to the defined parameter ranges</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># these param samples are n_samples * the parameter ranges</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>param_samples <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_samples, <span class="at">ncol =</span> <span class="fu">length</span>(param_ranges),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">dimnames =</span> <span class="fu">list</span>(<span class="cn">NULL</span>, <span class="fu">names</span>(param_ranges)))</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through the indices of the list of parameter ranges</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(param_ranges)) {</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get the range (min and max) for each parameter</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  range_i <span class="ot">&lt;-</span> param_ranges[[i]]</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generate a random sample of size n_samples from a uniform distribution </span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># with the minimum and maximum values specified by range_i.</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># These random numbers represent sampled values of each parameter, </span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># which are stored in the i-th column of the param_samples matrix.</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  param_samples[, i] <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_samples, <span class="at">min =</span> range_i[<span class="dv">1</span>], <span class="at">max =</span> range_i[<span class="dv">2</span>])</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
 <div id="assumptions-and-simplifications" class="section level3">
-<h3>2.1 Assumptions and Simplifications</h3>
+<h3>2.2 Assumptions and Simplifications</h3>
 <ul>
 <li>environmental conditions (pH and temperature)</li>
 <li>protein stability (delta G)</li>
@@ -2994,7 +3157,7 @@ Protein misfolding, an integral molecular event where proteins fail to fold into
 </div>
 <div id="general-information" class="section level2">
 <h2>6.0 General information</h2>
-<p>This document was last updated at 2023-05-13 19:43:42 using R Markdown (built with R version 4.2.3 (2023-03-15)).</p>
+<p>This document was last updated at 2023-05-14 10:14:29 using R Markdown (built with R version 4.2.3 (2023-03-15)).</p>
 </div>
 
 
