@@ -120,7 +120,7 @@ ggplot(result, aes(x = time)) +
   geom_line(aes(y = Protein_success, color = "Protein_success")) +
   geom_line(aes(y = Protein_misfolded, color = "Protein_misfolded")) +
   labs(
-    title = "Time-course data for protein_success and protein_misfolded",
+    title = "Model dynamics for successfully folded and misfolded proteins",
     x = "Time",
     y = "Concentration",
     color = "Species"
@@ -142,7 +142,7 @@ param_ranges <- list(
 )
 
 # Number of samples
-n_samples <- 50000  
+n_samples <- 50 
 
 # Generate normalized LHS samples
 lhs_samples <- randomLHS(n_samples, length(param_ranges))
@@ -196,11 +196,12 @@ fractions_misfolded
 
 # Find the index of the simulation with the highest fraction of misfolded proteins
 max_index <- which.max(fractions_misfolded)
+
+# Maximum fraction/percentage misfolded value
 max_misfold <- fractions_misfolded[max_index]
 
-
 # Retrieve the parameter combination that corresponds to the index
-optimal_params <- param_samples[max_index, ]
+optimal_params <- as.data.frame(param_samples[max_index, ])
 
 # Combine the input parameters and fractions_misfolded into a single data frame
 input_parameters <- data.frame(param_samples)

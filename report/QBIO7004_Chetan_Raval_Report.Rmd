@@ -39,6 +39,9 @@ Therapeutic efforts have focused on varying stages of the protein lifecycle incl
 The stochastic model presented in this report, albeit simplified, investigates protein folding and misfolding dynamics by integrating key processes such as protein synthesis, folding, misfolding, chaperone-assisted refolding, and degradation. The model provides a generalised framework to study the effects of individual parameters on the rate and extent of protein misfolding and aims to offer insight into how different cellular states may contribute to protein aggregation and toxicity causing neurodegenerative diseases. This model will be utilised to screen parameter space using Latin Hypercube Sampling and investigate what combination of parameters in the modelled system leads to the highest fraction of misfolding. 
 
 ## 2.0 Methods
+
+# mermaid diagram of the model here?
+
 Preliminary background research was conducted on the mechanisms of protein folding in order to create a biologically representative model. Lehninger Principles of Biochemistry (Nelson et al., 2021) was utilised to create a framework of the most prominent mechanisms before proceeding. Due to the extremely complex nature of the protein folding and degradation pathways, numerous simplifications, which are discussed in 2.1, were made. Seven parameters and their effect on protein folding would be investigated in this model as follows:
 ```{r}
 # Model parameters
@@ -149,7 +152,7 @@ param_ranges <- list(
 Then `n_samples` samples are created for each parameter in `param_ranges` which will then be used in parameter space screening to investigate the combination of parameters that causes the highest fraction of protein misfolding.
 ```{r}
 # Number of samples
-n_samples <- 10000  
+n_samples <- 10 
 
 # Generate normalized LHS samples
 lhs_samples <- randomLHS(n_samples, length(param_ranges))
@@ -172,12 +175,14 @@ for (i in seq_along(param_ranges)) {
 }
 ```
 
-```{r, echo = FALSE}
-knitr::kable(head(param_samples))
+Table \@ref(tab:paramsamples) is the head of `param_samples` dataframe, showing the different combinations of parameter ranges to simulate in parameter space screening.
+```{r paramsamples, echo = FALSE}
+knitr::kable(head(param_samples),
+             caption = "Parameter values that are within the range of values specified to be sampled using the adaptive tau-leaping method")
 ```
 
 Each row of the resulting `param_samples` dataframe was then simulated using `ssa.adaptivetau` and stored in the `results` vector.
-```{r, eval = FALSE}
+```{r}
 t_max <- 25
 
 # Initialize a list of length n_samples to store the results of each simulation
@@ -197,7 +202,7 @@ for (i in 1:n_samples) {
 }
 ```
 
-To determine the system parameters that cause the highest fraction of protein misfolding, the results vector was inspected and a new vector was created with fractions of misfolding rates for each simulation. The maximum value from this list was then extracted along with the parameters utilised in that particular simulation.
+Finally, to determine the system parameters that cause the highest fraction of protein misfolding, the `results` vector was inspected and a new vector was created with fractions of misfolding rates for each simulation. The maximum value from this list was then extracted along with the parameters utilised in that particular simulation.
 ```{r}
 fractions_misfolded <- numeric(length(results))
 
@@ -214,19 +219,16 @@ max_misfold <- fractions_misfolded[max_index]
 optimal_params <- param_samples[max_index, ]
 ```
 
-
-### 2.2 Assumptions and Simplifications
-
-- environmental conditions (pH and temperature)
-- protein stability (delta G)
-- chaperone type and function
-- other degradation pathways - Ubiquitin-Proteasome Pathway and Lysosomal Proteolysis
-- post-translational modifications
-- protein folding/misfolding mechanisms outside of my knowledge
-
 ## 3.0 Results
 
 ### 3.1 Parameter Screening
+
+### 3.3 Simplifications and Limitations
+To accommodate the scope of this project and the extremely complex nature of human biology, numerous simplifications had to be made. Notably, environmental influences such as pH and temperature, which play pivotal roles in protein folding, are not incorporated into the model. Consequently, protein stability has been modelled in a rudimentary manner treating misfolded proteins in a probabilistic way. Therefore, the model does not fully capture protein thermodynamics that govern folding, misfolding, and denaturation. 
+
+Chaperone-assisted folding is assumed to interact exclusively with misfolded proteins in an effort to reflect the function of HSP70 (Dubey et al., 2015). This assumption, while useful, does not account for the complex network of other chaperones involved in protein folding.
+
+Furthermore, post-tranlsational modifications such as glycosylation, methylation, and acetylation that can significantly influence protein function and behaviour have been omitted from the model to maintain its simplicity. Finally, not included are other important protein behaviours such as translocation, protein-protein interactions, conformational changes, and alternatives to the lysosomal proteolysis degradation pathway represented in the model. While these elements were excluded due to the scope of the project, their absence should be considered when interpreting the model's results.
 
 ## 4.0 Conclusion
 

@@ -3047,7 +3047,7 @@ border-radius: 0px;
 <td align="right">150</td>
 </tr>
 <tr class="even">
-<td align="right">0.0013562</td>
+<td align="right">0.0009238</td>
 <td align="right">999</td>
 <td align="right">1000</td>
 <td align="right">1</td>
@@ -3056,16 +3056,16 @@ border-radius: 0px;
 <td align="right">150</td>
 </tr>
 <tr class="odd">
-<td align="right">0.0015803</td>
-<td align="right">999</td>
-<td align="right">999</td>
-<td align="right">1</td>
-<td align="right">1</td>
+<td align="right">0.0011044</td>
+<td align="right">998</td>
+<td align="right">1000</td>
+<td align="right">2</td>
+<td align="right">0</td>
 <td align="right">50</td>
 <td align="right">150</td>
 </tr>
 <tr class="even">
-<td align="right">0.0017486</td>
+<td align="right">0.0014163</td>
 <td align="right">998</td>
 <td align="right">999</td>
 <td align="right">2</td>
@@ -3074,7 +3074,7 @@ border-radius: 0px;
 <td align="right">150</td>
 </tr>
 <tr class="odd">
-<td align="right">0.0024464</td>
+<td align="right">0.0026501</td>
 <td align="right">998</td>
 <td align="right">998</td>
 <td align="right">2</td>
@@ -3083,7 +3083,7 @@ border-radius: 0px;
 <td align="right">150</td>
 </tr>
 <tr class="even">
-<td align="right">0.0028844</td>
+<td align="right">0.0027196</td>
 <td align="right">997</td>
 <td align="right">998</td>
 <td align="right">3</td>
@@ -3107,9 +3107,9 @@ border-radius: 0px;
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">k_degradation =</span> <span class="fu">c</span>(<span class="fl">0.0001</span>, <span class="fl">0.1</span>),</span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">feedback_strength =</span> <span class="fu">c</span>(<span class="fl">0.000001</span>, <span class="fl">0.01</span>)</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
-<p>Then <code>n_samples</code> samples are created for each parameter in <code>param_ranges</code> which will then be used in the Latin Hypercube Sample</p>
+<p>Then <code>n_samples</code> samples are created for each parameter in <code>param_ranges</code> which will then be used in parameter space screening to investigate the combination of parameters that causes the highest fraction of protein misfolding.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of samples</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>n_samples <span class="ot">&lt;-</span> <span class="dv">10000</span>  </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>n_samples <span class="ot">&lt;-</span> <span class="dv">10</span> </span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate normalized LHS samples</span></span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>lhs_samples <span class="ot">&lt;-</span> <span class="fu">randomLHS</span>(n_samples, <span class="fu">length</span>(param_ranges))</span>
@@ -3130,6 +3130,118 @@ border-radius: 0px;
 <span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># which are stored in the i-th column of the param_samples matrix.</span></span>
 <span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  param_samples[, i] <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_samples, <span class="at">min =</span> range_i[<span class="dv">1</span>], <span class="at">max =</span> range_i[<span class="dv">2</span>])</span>
 <span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Table <a href="#tab:paramsamples">1</a> is the head of <code>param_samples</code> dataframe, showing the different combinations of parameter ranges to simulate in parameter space screening.</p>
+<table>
+<caption><span id="tab:paramsamples">Table 1: </span>Parameter values that are within the range of values specified to be sampled using the adaptive tau-leaping method</caption>
+<colgroup>
+<col width="14%" />
+<col width="13%" />
+<col width="17%" />
+<col width="15%" />
+<col width="14%" />
+<col width="10%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">k_folding_unmutated</th>
+<th align="right">k_folding_mutated</th>
+<th align="right">k_misfolding_unmutated</th>
+<th align="right">k_misfolding_mutated</th>
+<th align="right">k_chaperone_folding</th>
+<th align="right">k_degradation</th>
+<th align="right">feedback_strength</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">11.203881</td>
+<td align="right">13.81964</td>
+<td align="right">2.2482655</td>
+<td align="right">4.153240</td>
+<td align="right">0.0146564</td>
+<td align="right">0.0014369</td>
+<td align="right">0.0021138</td>
+</tr>
+<tr class="even">
+<td align="right">4.020847</td>
+<td align="right">27.96338</td>
+<td align="right">3.4052485</td>
+<td align="right">3.466273</td>
+<td align="right">0.0192123</td>
+<td align="right">0.0489700</td>
+<td align="right">0.0081640</td>
+</tr>
+<tr class="odd">
+<td align="right">8.557063</td>
+<td align="right">29.16773</td>
+<td align="right">5.2270175</td>
+<td align="right">7.968296</td>
+<td align="right">0.0318179</td>
+<td align="right">0.0801891</td>
+<td align="right">0.0081477</td>
+</tr>
+<tr class="even">
+<td align="right">13.946380</td>
+<td align="right">16.12863</td>
+<td align="right">0.5373297</td>
+<td align="right">1.961316</td>
+<td align="right">0.0489962</td>
+<td align="right">0.0642913</td>
+<td align="right">0.0053342</td>
+</tr>
+<tr class="odd">
+<td align="right">16.633341</td>
+<td align="right">15.40940</td>
+<td align="right">2.7952921</td>
+<td align="right">2.694474</td>
+<td align="right">0.0024951</td>
+<td align="right">0.0491300</td>
+<td align="right">0.0095201</td>
+</tr>
+<tr class="even">
+<td align="right">10.574086</td>
+<td align="right">21.66330</td>
+<td align="right">5.8707679</td>
+<td align="right">4.952036</td>
+<td align="right">0.0078284</td>
+<td align="right">0.0658757</td>
+<td align="right">0.0015448</td>
+</tr>
+</tbody>
+</table>
+<p>Each row of the resulting <code>param_samples</code> dataframe was then simulated using <code>ssa.adaptivetau</code> and stored in the <code>results</code> vector.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>t_max <span class="ot">&lt;-</span> <span class="dv">25</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize a list of length n_samples to store the results of each simulation</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="at">length =</span> n_samples)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop over the number of samples</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_samples) {</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># For each sample, extract the i-th row from the param_samples matrix,</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># which corresponds to the parameter values for the i-th simulation.</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert this row to a list, because the ssa.adaptivetau function expects its parameters in this format.</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  params_i <span class="ot">&lt;-</span> <span class="fu">as.list</span>(param_samples[i, ])</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Run the stochastic simulation algorithm with the Adaptive Tau method for the current set of parameters.</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The initial state of the system is given by &quot;init&quot;, the set of reactions by &quot;transitions&quot;,</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># the propensity function by &quot;propensity_function&quot;, the parameters by &quot;params_i&quot;, </span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># and the simulation runs until time &quot;t_max&quot;.</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Store the result of the simulation in the i-th element of the results list.</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  results[[i]] <span class="ot">&lt;-</span> <span class="fu">ssa.adaptivetau</span>(init, transitions, propensity_function, params_i, t_max)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>To determine the system parameters that cause the highest fraction of protein misfolding, the results vector was inspected and a new vector was created with fractions of misfolding rates for each simulation. The maximum value from this list was then extracted along with the parameters utilised in that particular simulation.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fractions_misfolded <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(results))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(results)) {</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> results[[i]]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  final_state <span class="ot">&lt;-</span> result[<span class="fu">nrow</span>(result), <span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>] <span class="co"># Get the final state of Protein_success (4th column) and Protein_misfolded (5th column)</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># print(final_state)</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  fraction_misfolded <span class="ot">&lt;-</span> final_state[<span class="dv">2</span>] <span class="sc">/</span> <span class="fu">sum</span>(final_state) <span class="co"># Calculate the fraction of misfolded proteins</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  fractions_misfolded[i] <span class="ot">&lt;-</span> fraction_misfolded</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>max_index <span class="ot">&lt;-</span> <span class="fu">which.max</span>(fractions_misfolded)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>max_misfold <span class="ot">&lt;-</span> fractions_misfolded[max_index]</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>optimal_params <span class="ot">&lt;-</span> param_samples[max_index, ]</span></code></pre></div>
 </div>
 <div id="assumptions-and-simplifications" class="section level3">
 <h3>2.2 Assumptions and Simplifications</h3>
@@ -3157,7 +3269,7 @@ border-radius: 0px;
 </div>
 <div id="general-information" class="section level2">
 <h2>6.0 General information</h2>
-<p>This document was last updated at 2023-05-14 10:14:29 using R Markdown (built with R version 4.2.3 (2023-03-15)).</p>
+<p>This document was last updated at 2023-05-14 18:33:03 using R Markdown (built with R version 4.2.3 (2023-03-15)).</p>
 </div>
 
 
