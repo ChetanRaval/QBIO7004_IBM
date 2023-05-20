@@ -1,36 +1,22 @@
-# TODO:
-# Create diagram of inputs/outputs and weights
-# Research propensity function equations and parameters for biological accuracy
-# Write down all equations and justify them - not entirely required
-# this model can be quite general and then parameters can be changed to fit to biological systems that you are modelling
-# Thoroughly comment code
-# RMD report
-# Presentation
-
-# output summary statistics from the LHS - such as what combination of parameters is causing the highest fraction of misfolding
-
-# show the full dynamics at the start
-# then narrow down to a specific question that you are summarising the model for
-# show different instances of the same parameter in one plot
-# dont have to choose all parameters - choose one parameter that is of interest - fix one parameter e.g. k-folding-mutated and change all of the other parameters on the y axis and see how this affects it
-# possibly remove chaperones from the diagram and from plots etc. not interesting
+# QBIO7004 - COMPUTATIONAL METHODS IN BIOLOGY
+# Stochastic Event-Based Model
+# Protein folding/misfolding and aggregation implications in neurodegenerative diseases
+# Chetan Raval
+# c.raval@uqconnect.edu.au
 
 library(adaptivetau)
 library(tidyverse)
 library(lhs)
+library(gganimate)
+library(ppcor)
+
+# load .RData for simulation reproducibility
+# load("../output/lhs_simulation.RData")
+
+# if .RData file not available, set the following seed
+set.seed(7004)
 
 # Model parameters
-params <- c(
-  k_folding_unmutated = 0.9,       # Folding rate constant for proteins from unmutated RNA
-  k_folding_mutated = 0.9,         # Folding rate constant for proteins from mutated RNA
-  k_misfolding_unmutated = 0.1,    # Misfolding rate constant for proteins from unmutated RNA
-  k_misfolding_mutated = 0.3,      # Misfolding rate constant for proteins from mutated RNA
-  k_chaperone_folding = 0.01,      # Chaperone-assisted folding rate constant
-  k_degradation = 0.01,            # Protein degradation rate constant
-  feedback_strength = 0.0001       # Feedback strength for negative feedback
-)
-
-# more interesting base parameter values
 params <- c(
   k_folding_unmutated = 0.3,         # Folding rate constant for proteins from unmutated RNA
   k_folding_mutated = 0.5,           # Folding rate constant for proteins from mutated RNA
@@ -47,8 +33,8 @@ init <- c(
   RNA_mutated = 1000,              # Number of mutated RNA molecules present
   Protein_success = 0,             # Number of successfully folded proteins
   Protein_misfolded = 0,           # Number of misfolded proteins
-  Chaperone = 15,                  # Number of chaperones available
-  Degradation_signal = 25         # Initial level of the degradation signal
+  Chaperone = 50,                  # Number of chaperones available
+  Degradation_signal = 150         # Initial level of the degradation signal
 )
 
 
@@ -74,6 +60,10 @@ propensity_function <- function(state, params, t) {
   ))
 }
 
+# Function to calculate transition rates, given the propensity function and parameters
+# init cell state values are updated based on the above propensity functions
+# each transition increments the mentioned variables in the same order they appear in propensities function
+# e.g. transitions[1] updates after the 1st calculation in propensity function is completed and so on
 transitions <- list(
   # Folding reaction for proteins translated from unmutated RNA
   c(RNA_unmutated = -1, Protein_success = +1),
@@ -92,7 +82,8 @@ transitions <- list(
   c(Degradation_signal = +1)
 )
 
-t_final <- 10   # Final time for the simulation
+# Simulation time
+t_final <- 10   
 
 result <- ssa.adaptivetau(init.values = init, 
                           transitions = transitions, 
@@ -100,19 +91,21 @@ result <- ssa.adaptivetau(init.values = init,
                           params = params, 
                           tf = t_final)
 
-
+# convert adaptive tau results into dataframe for plotting
 result <- as.data.frame(result)
+# check head of dataframe
 head(result)
 
+# convert result dataframe into long format for ggplot output
 result_long <- result %>% 
   pivot_longer(cols = -time, names_to = "variable", values_to = "value")
 
+# plot the dynamics of the model for the above simulation
 ggplot(result_long, aes(x = time, y = value, color = variable)) +
   geom_line() +
   labs(x = "Time", y = "Value", color = "Variable", 
        title = "Protein Misfolding Model") +
   theme_minimal()
-
 
 
 # Plot the time-course data for protein_success and protein_misfolded
@@ -128,7 +121,7 @@ ggplot(result, aes(x = time)) +
   theme_minimal()
 
 
-# Latin Hypercube Sampling
+# -------- Latin Hypercube Sampling -------- #
 
 # create parameter ranges to sample
 param_ranges <- list(
@@ -142,7 +135,7 @@ param_ranges <- list(
 )
 
 # Number of samples
-n_samples <- 50 
+n_samples <- 10000
 
 # Generate normalized LHS samples
 lhs_samples <- randomLHS(n_samples, length(param_ranges))
@@ -164,7 +157,8 @@ for (i in seq_along(param_ranges)) {
   param_samples[, i] <- runif(n_samples, min = range_i[1], max = range_i[2])
 }
 
-t_max <- 25
+# max simulation time
+t_max <- 10
 
 # Initialize a list of length n_samples to store the results of each simulation
 results <- vector("list", length = n_samples)
@@ -182,75 +176,52 @@ for (i in 1:n_samples) {
   results[[i]] <- ssa.adaptivetau(init, transitions, propensity_function, params_i, t_max)
 }
 
+# create a list to store misfolded fraction results in
 fractions_misfolded <- numeric(length(results))
 
+# 
 for (i in seq_along(results)) {
   result <- results[[i]]
-  final_state <- result[nrow(result), 4:5] # Get the final state of Protein_success (4th column) and Protein_misfolded (5th column)
-  # print(final_state)
+  # Get the final state of Protein_success (4th column) and Protein_misfolded (5th column)
+  final_state <- result[nrow(result), 4:5] 
+  # print(final_state) - testing loop
   fraction_misfolded <- final_state[2] / sum(final_state) # Calculate the fraction of misfolded proteins
+  # append to i-th index of empty list
   fractions_misfolded[i] <- fraction_misfolded
 }
-
-fractions_misfolded
 
 # Find the index of the simulation with the highest fraction of misfolded proteins
 max_index <- which.max(fractions_misfolded)
 
 # Maximum fraction/percentage misfolded value
 max_misfold <- fractions_misfolded[max_index]
+# show max_misfold list
+max_misfold
 
 # Retrieve the parameter combination that corresponds to the index
 optimal_params <- as.data.frame(param_samples[max_index, ])
+optimal_params$max_misfold <- max_misfold
 
 # Combine the input parameters and fractions_misfolded into a single data frame
-input_parameters <- data.frame(param_samples)
+input_parameters <- as.data.frame(param_samples)
 colnames(input_parameters) <- names(param_ranges)
 input_parameters$fraction_misfolded <- fractions_misfolded
 
 
 
+# extract the simulation conditions for the maximum misfolded event
+simulation_data <- as.data.frame(results[[max_index]])
+# restructure data for plotting
+simulation_data_long <- simulation_data %>% 
+  pivot_longer(cols = -time, names_to = "variable", values_to = "value")
+# plot this simulation
+ggplot(simulation_data_long, aes(x = time, y = value, color = variable)) +
+  geom_line() +
+  labs(x = "Time", y = "Value", color = "Variable", 
+       title = "Misfolding Model - Maximum Misfolded Fraction") +
+  theme_minimal()
 
 
-library(ggplot2)
-
-all_data <- do.call(rbind, lapply(seq_along(results), function(i) {
-  result <- results[[i]]
-  data_i <- data.frame(time = result[, "time"],
-                       RNA_unmutated = result[, "RNA_unmutated"],
-                       RNA_mutated = result[, "RNA_mutated"],
-                       Protein_success = result[, "Protein_success"],
-                       Protein_misfolded = result[, "Protein_misfolded"],
-                       Chaperone = result[, "Chaperone"],
-                       Degradation_signal = result[, "Degradation_signal"],
-                       sample_id = i)
-  return(data_i)
-}))
-
-
-
-
-
-# Helper function to plot a single simulation
-plot_simulation <- function(data, simulation_id) {
-  ggplot(data[data$sample_id == simulation_id,], aes(x = time)) +
-    geom_line(aes(y = Protein_success, color = "Protein_success")) +
-    geom_line(aes(y = Protein_misfolded, color = "Protein_misfolded")) +
-    labs(title = paste("Simulation", simulation_id),
-         x = "Time",
-         y = "Protein count",
-         color = "Species") +
-    theme_minimal()
-}
-
-# Plot a few simulations (e.g., first 3)
-simulation_ids <- unique(all_data$sample_id)[1:3]
-plots <- lapply(simulation_ids, function(simulation_id) {
-  plot_simulation(all_data, simulation_id)
-})
-
-# Display the plots
-gridExtra::grid.arrange(grobs = plots, ncol = 1)
-
-
+# export sessionInfo to .txt file for reproducibility
+writeLines(capture.output(sessionInfo()), "../sessionInfo.txt")
 
